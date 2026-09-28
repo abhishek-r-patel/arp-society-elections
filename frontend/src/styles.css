@@ -1,0 +1,352 @@
+/* Maplewood theme: warm amber/caramel + walnut brown, parchment backgrounds. */
+:root {
+  color-scheme: light;
+  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+
+  --maple-bg: #f6ead9;
+  --maple-panel: #fffaf2;
+  --maple-panel-alt: #fdf1de;
+  --maple-border: #d8b48a;
+  --maple-border-soft: #e8cda3;
+  --maple-text: #3b2415;
+  --maple-text-muted: #7a5c3e;
+  --maple-primary: #a15c2c;
+  --maple-primary-hover: #8a4a20;
+  --maple-primary-contrast: #fffaf2;
+  --maple-accent: #c98a4b;
+  --maple-danger: #9c3b2e;
+  --maple-danger-hover: #7c2e24;
+  --maple-warning-bg: #f6e2b0;
+  --maple-warning-border: #d9a441;
+  --maple-conflict-bg: #fbe4d4;
+  --maple-conflict-border: #e2a06b;
+  --maple-shadow: rgba(59, 36, 21, 0.1);
+  --maple-heading-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+}
+
+body {
+  margin: 0;
+  color: var(--maple-text);
+  background-color: var(--maple-bg);
+  background-image: repeating-linear-gradient(
+    120deg,
+    rgba(161, 92, 44, 0.05) 0px,
+    rgba(161, 92, 44, 0.05) 2px,
+    transparent 2px,
+    transparent 26px
+  );
+}
+
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--maple-heading-font);
+  color: var(--maple-primary-hover);
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+a {
+  color: var(--maple-primary);
+}
+
+a:hover {
+  color: var(--maple-primary-hover);
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--maple-text-muted);
+}
+
+input,
+textarea {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--maple-border);
+  border-radius: 6px;
+  font-size: 1rem;
+  background: var(--maple-panel);
+  color: var(--maple-text);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--maple-primary);
+  box-shadow: 0 0 0 3px rgba(161, 92, 44, 0.2);
+}
+
+button {
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--maple-primary);
+  color: var(--maple-primary-contrast);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 1px 2px var(--maple-shadow);
+  transition: background-color 0.15s ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--maple-primary-hover);
+}
+
+button:disabled {
+  background: #c9b8a4;
+  color: #f6ead9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+button.danger {
+  background: var(--maple-danger);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--maple-danger-hover);
+}
+
+button.danger:disabled {
+  background: #c9b8a4;
+  color: #f6ead9;
+}
+
+fieldset {
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.candidate-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--maple-border-soft);
+  border-radius: 6px;
+  background: var(--maple-panel);
+}
+
+.error {
+  color: var(--maple-danger);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.warning {
+  background: var(--maple-warning-bg);
+  border: 1px solid var(--maple-warning-border);
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--maple-text-muted);
+}
+
+.panel {
+  background: var(--maple-panel);
+  border: 1px solid var(--maple-border-soft);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 1rem;
+  box-shadow: 0 2px 6px var(--maple-shadow);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.backend-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: var(--maple-text-muted);
+  background: var(--maple-panel-alt);
+  border: 1px solid var(--maple-border-soft);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+.receipt {
+  background: var(--maple-panel);
+  border: 1px solid var(--maple-border-soft);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.receipt dt {
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--maple-text-muted);
+}
+
+.receipt dd {
+  margin: 0 0 0.75rem;
+  font-family: ui-monospace, monospace;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.75rem 0;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--maple-border-soft);
+}
+
+th {
+  color: var(--maple-text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.admin-link {
+  font-size: 0.85rem;
+}
+
+.position-group,
+.position-editor {
+  border: 1px solid var(--maple-border-soft);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--maple-panel-alt);
+}
+
+.position-editor legend {
+  font-family: var(--maple-heading-font);
+  font-weight: 600;
+  padding: 0 0.3rem;
+  color: var(--maple-primary-hover);
+}
+
+.candidate-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.candidate-row input {
+  flex: 1;
+  box-sizing: border-box;
+  height: 2.5rem;
+}
+
+.icon-button {
+  padding: 0.3rem 0.6rem;
+  font-size: 1rem;
+  line-height: 1;
+  min-width: 2.2rem;
+}
+
+.candidate-row .icon-button {
+  box-sizing: border-box;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+.position-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.candidates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.candidates-header .hint {
+  margin: 0;
+}
+
+.nota-option {
+  font-style: italic;
+  color: var(--maple-text-muted);
+}
+
+.positions-summary {
+  padding-left: 1.1rem;
+}
+
+.countdown {
+  font-family: ui-monospace, monospace;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--maple-primary-hover);
+}
+
+.countdown-panel {
+  text-align: center;
+}
+
+.position-results {
+  margin-top: 0.75rem;
+}
+
+.conflict-panel {
+  margin: 0.75rem 0;
+  background: var(--maple-warning-bg);
+}
+
+.conflict-card {
+  border: 1px solid var(--maple-conflict-border);
+  background: var(--maple-conflict-bg);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.conflict-card button {
+  align-self: flex-start;
+  margin-right: 0.4rem;
+}
+
+.declined-list ul {
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  color: var(--maple-text-muted);
+}
+
+.publish-box {
+  margin: 0.75rem 0;
+}

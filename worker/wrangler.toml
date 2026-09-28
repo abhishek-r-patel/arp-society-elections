@@ -1,0 +1,17 @@
+name = "arp-society-elections-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Non-secret defaults for local development. Override in `.dev.vars` locally,
+# or with `wrangler secret put` / dashboard vars once deployed.
+[vars]
+STORAGE_BACKEND = "D1"
+GAS_URL = ""
+
+# Placeholder ID — fine for local-only `wrangler dev`. Replace with a real ID
+# from `wrangler d1 create election-db` before deploying to Cloudflare.
+[[d1_databases]]
+binding = "DB"
+database_name = "election-db"
+database_id = "00000000-0000-0000-0000-000000000000"

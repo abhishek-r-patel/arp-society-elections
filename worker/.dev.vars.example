@@ -1,0 +1,20 @@
+# Copy this file to `.dev.vars` (gitignored) and fill in real values.
+# `.dev.vars` is only used by `wrangler dev` for local development.
+
+# Which storage backend to use locally: D1 or GOOGLE_SHEET
+STORAGE_BACKEND=D1
+
+# Required. SHA-256 hex digest of the admin password (not the password itself).
+# Set/change it with (this writes only the hash to .dev.vars, never the password):
+#   npm run set-admin-password -- "YOUR_PASSWORD"
+ADMIN_PASSWORD_HASH=
+
+# Required. Any long random string, used to sign admin session tokens.
+ADMIN_SESSION_SECRET=change-me-to-a-long-random-string
+
+# Required. Any long random string, used to hash voter credentials before storage.
+CREDENTIAL_PEPPER=change-me-to-a-different-long-random-string
+
+# Only needed when STORAGE_BACKEND=GOOGLE_SHEET (see apps-script/README.md)
+GAS_URL=
+GAS_SHARED_SECRET=

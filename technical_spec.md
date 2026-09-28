@@ -67,14 +67,15 @@ arp-society-elections/
 │   ├── scripts/
 │   │   └── set-admin-password.mjs  # writes only a password HASH into .dev.vars
 │   ├── schema.sql            # D1 schema — single source of truth for the data model
-│   ├── wrangler.toml          # Worker config (D1 binding, default vars)
+│   ├── wrangler.toml          # Worker config: local D1/vars + a separate [env.production] block
 │   ├── .dev.vars / .dev.vars.example  # local secrets (gitignored) / template
 │   └── package.json
 ├── frontend/                 # React + Vite SPA
 │   └── src/
 │       ├── main.tsx           # ReactDOM root, sets document.title from SITE_TITLE
 │       ├── App.tsx             # react-router-dom route table
-│       ├── api.ts              # thin fetch wrapper, one function per Worker endpoint
+│       ├── api.ts              # thin fetch wrapper, one function per Worker endpoint (+ API_BASE)
+│       ├── vite-env.d.ts       # import.meta.env typing (VITE_API_BASE_URL)
 │       ├── types.ts            # hand-kept mirror of worker/src/types.ts response shapes
 │       ├── constants.ts        # frontend-only tunables (SITE_TITLE, standard positions, …)
 │       ├── styles.css          # "Maplewood" theme + all component styling
@@ -84,9 +85,13 @@ arp-society-elections/
 ├── apps-script/
 │   ├── Code.gs                # Google Apps Script backend (Google Sheets storage backend)
 │   └── README.md               # how to deploy Code.gs as a Web App
+├── .github/workflows/
+│   ├── deploy-worker.yml       # manual-only (workflow_dispatch): D1 schema + Worker deploy
+│   └── deploy-frontend.yml     # manual-only (workflow_dispatch): build + Pages deploy
 ├── docs/
 │   ├── VOTER_FAQ.md            # end-user FAQ for voters
-│   └── ADMIN_FAQ.md            # end-user FAQ for admins
+│   ├── ADMIN_FAQ.md            # end-user FAQ for admins
+│   └── CLOUDFLARE_DEPLOY.md    # one-time Cloudflare account/CI setup steps (see §9)
 ├── README.md                   # end-user setup/usage guide (not technical)
 └── technical_spec.md           # this file
 ```
@@ -104,6 +109,10 @@ parseable body. **Historical gotcha** (documented in-file): the dispatcher once 
 `/api/election/status` only, so a later route added at `/api/election/results` 404'd until the
 match was changed to a prefix check. Any new route under an existing prefix needs no
 dispatcher change; a route under a brand-new top-level prefix does.
+
+Also answers CORS preflight `OPTIONS` requests directly (before any routing) and attaches
+`corsHeaders(env.ALLOWED_ORIGIN)` (see `http.ts`) to every response — needed once the frontend
+and Worker are different origins in production (see §9).
 
 ### `src/types.ts`
 Canonical backend type definitions — `Election`, `Position`, `Candidate`, `Registration`,
@@ -149,9 +158,10 @@ Minimal, purpose-built CSV parsing/escaping (not a general library):
 - `csvCell(value)` — quotes/escapes a value only if it contains a comma, quote, or newline.
 
 ### `src/http.ts`
-Three shared helpers used by both route modules: `json()` (consistent JSON responses),
+Four shared helpers used by both route modules: `json()` (consistent JSON responses),
 `readJson<T>()` (throws a user-facing error on malformed bodies), `getCookie()` (cookie
-header parsing, used to read the admin session cookie).
+header parsing, used to read the admin session cookie), `corsHeaders(allowedOrigin)` (the
+header set applied to every response by `index.ts` — see §9).
 
 ### `src/routes/voter.ts` — public endpoints (no auth)
 | Method | Path | Purpose |
@@ -441,8 +451,10 @@ Registration model (self-service, not admin-CSV-driven):
   that base64url string)`. `verifyAdminSession()` checks the signature (constant-time compare)
   and that `exp` hasn't passed. No session table to clean up, but also no server-side way to
   revoke a single outstanding token early (logout just clears the cookie client-side).
-- Session cookie: `HttpOnly; Path=/; SameSite=Lax` (+ `Secure` automatically when served over
-  `https:`), `ADMIN_SESSION_TTL_SECONDS` = 8 hours.
+- Session cookie: `HttpOnly; Path=/`, `ADMIN_SESSION_TTL_SECONDS` = 8 hours. `SameSite`/`Secure`
+  attributes depend on protocol — see §9: local `wrangler dev` (plain http) uses `SameSite=Lax`
+  with no `Secure`; anything served over https uses `SameSite=None; Secure` so the cookie still
+  works when the frontend and Worker are different origins in production.
 
 ## 7. Results model: three distinct views, on purpose
 
@@ -509,7 +521,50 @@ Re-run `npm run db:init` in `worker/` after deleting `worker/.wrangler/state/v3/
 re-running the schema, which uses `CREATE TABLE IF NOT EXISTS` so it's safe to re-apply, though
 it won't drop existing tables/data on its own).
 
-## 9. Google Sheets backend (`apps-script/`)
+## 9. Production deployment (Cloudflare)
+
+Deployed as two independent pieces, each behind its **own manual-only** GitHub Actions
+workflow — `.github/workflows/deploy-worker.yml` and `deploy-frontend.yml`, both
+`on: workflow_dispatch` with no `push`/`pull_request` trigger, so **no branch auto-deploys on
+push**. The Cloudflare Pages project is also created as a **Direct Upload** project rather than
+via Cloudflare's own Git integration, specifically so Cloudflare itself doesn't add a second,
+separate auto-build-on-push path outside these workflows. See
+[docs/CLOUDFLARE_DEPLOY.md](docs/CLOUDFLARE_DEPLOY.md) for the full one-time setup (API token,
+GitHub secrets/variables, production D1 database, Worker secrets, Pages project creation) and
+the redeploy steps.
+
+Architecture consequence: without a custom domain, the Pages site (`*.pages.dev`) and the Worker
+(`*.workers.dev`) are **different origins**, unlike local dev where Vite's proxy makes them look
+same-origin to the browser. This required:
+- `worker/src/index.ts` / `worker/src/http.ts`'s `corsHeaders()` — every response gets
+  `Access-Control-Allow-Origin` (the exact Pages origin — required, since credentialed requests
+  can't use `*`), `Access-Control-Allow-Credentials: true`, and `OPTIONS` preflight requests are
+  answered directly in the entrypoint before routing.
+- `Env.ALLOWED_ORIGIN` (new field) — the Worker's source of truth for that origin, set via
+  `wrangler.toml`'s `[vars]` (local dev: `http://localhost:5173`) and `[env.production.vars]`
+  (the real Pages URL).
+- The admin session cookie (`worker/src/routes/admin.ts`) uses `SameSite=None; Secure` when
+  served over https (production), vs `SameSite=Lax` for local `wrangler dev` (plain http, where
+  `Secure` cookies can't be set at all).
+- `frontend/src/api.ts`'s `request()` always sets `credentials: 'include'` (needed cross-origin
+  for the cookie to be sent; harmless for the local same-origin proxy), and prefixes every call
+  with `API_BASE` — empty locally (relative URL through the Vite proxy), or
+  `import.meta.env.VITE_API_BASE_URL` in production builds (the deployed Worker's absolute
+  origin, injected by `deploy-frontend.yml` from a `WORKER_URL` repo variable). The one non-`api.ts`
+  fetch call (`AdminDashboardPage`'s audit CSV download link) also uses `API_BASE` for the same
+  reason — a plain relative `href` would otherwise resolve against the Pages origin, not the
+  Worker.
+- `worker/wrangler.toml` gained an `[env.production]` block (own `vars` and its own
+  `[[env.production.d1_databases]]` binding pointing at a real, separate D1 database created
+  once via `wrangler d1 create election-db` — the top-level `[[d1_databases]]` with its
+  placeholder ID is only ever used by local `wrangler dev`).
+
+If a custom domain is added later and the Worker is routed at `yourdomain.com/api/*` alongside
+Pages on the same origin, none of the above needs to be reverted — `SameSite=None`/explicit CORS
+still work fine in a same-origin setup, they're just stricter than strictly necessary there.
+
+
+## 10. Google Sheets backend (`apps-script/`)
 
 `Code.gs` is a **hand-written mirror** of `d1Store.ts`'s logic against a Google Sheet used as a
 set of tables (one sheet tab per SQL table: `Elections`, `Positions`, `Candidates`, `Flats`,
@@ -529,7 +584,7 @@ set of tables (one sheet tab per SQL table: `Elections`, `Positions`, `Candidate
 See `apps-script/README.md` for deployment steps (Apps Script project, Web App deployment,
 script properties, spreadsheet tab setup).
 
-## 10. Known gaps / deliberately deferred work
+## 11. Known gaps / deliberately deferred work
 
 - No 404/catch-all route in `frontend/src/App.tsx`.
 - No actual email delivery of voting codes/registration keys (the flows generate them and

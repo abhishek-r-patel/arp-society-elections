@@ -13,11 +13,20 @@ import type {
   Turnout,
 } from './types';
 
+// Empty in local dev (relative URL, same-origin through the Vite proxy in
+// vite.config.ts); set to the deployed Worker's absolute origin in production
+// builds (see .github/workflows/deploy-frontend.yml), since Pages and the
+// Worker are served from different origins there.
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+
 // Failures throw with the server's human-readable `reason`/`error` message,
 // so callers only need a single try/catch rather than checking `ok` twice.
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     ...options,
+    // Required cross-origin so the admin session cookie is sent/stored —
+    // harmless for the local same-origin dev proxy too.
+    credentials: 'include',
     headers: { 'content-type': 'application/json', ...(options.headers ?? {}) },
   });
   const body = await res.json().catch(() => ({}));
@@ -29,6 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   return body as T;
 }
+
 
 export function getElectionPublicStatus() {
   return request<{

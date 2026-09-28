@@ -145,5 +145,7 @@ export interface Env {
   ADMIN_PASSWORD_HASH: string;
   ADMIN_SESSION_SECRET: string;
   CREDENTIAL_PEPPER: string;
+  /** Exact origin of the deployed frontend (e.g. https://arp-society-elections.pages.dev); echoed back in CORS headers — see http.ts's corsHeaders(). */
+  ALLOWED_ORIGIN: string;
 }
 

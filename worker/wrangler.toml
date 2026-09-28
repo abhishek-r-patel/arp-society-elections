@@ -8,10 +8,29 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 STORAGE_BACKEND = "D1"
 GAS_URL = ""
+# The Vite dev server's origin — see http.ts's corsHeaders().
+ALLOWED_ORIGIN = "http://localhost:5173"
 
 # Placeholder ID — fine for local-only `wrangler dev`. Replace with a real ID
 # from `wrangler d1 create election-db` before deploying to Cloudflare.
 [[d1_databases]]
+binding = "DB"
+database_name = "election-db"
+database_id = "00000000-0000-0000-0000-000000000000"
+
+# Deployed via `wrangler deploy --env production` (see .github/workflows/deploy-worker.yml).
+# Only ever triggered manually — this Worker is NOT connected to Cloudflare's
+# Git integration, so pushing to any branch does not deploy anything by itself.
+[env.production]
+[env.production.vars]
+STORAGE_BACKEND = "D1"
+GAS_URL = ""
+# Replace with your deployed Pages URL (see docs/CLOUDFLARE_DEPLOY.md).
+ALLOWED_ORIGIN = "https://arp-society-elections.pages.dev"
+
+# Replace database_id with the output of `wrangler d1 create election-db`
+# (run once, against your real Cloudflare account).
+[[env.production.d1_databases]]
 binding = "DB"
 database_name = "election-db"
 database_id = "00000000-0000-0000-0000-000000000000"

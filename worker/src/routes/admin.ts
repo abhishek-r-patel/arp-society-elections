@@ -19,10 +19,15 @@ export async function handleAdminRequest(request: Request, env: Env, url: URL): 
       return json({ ok: false, reason: 'Incorrect password.' }, { status: 401 });
     }
     const token = await createAdminSession(env.ADMIN_SESSION_SECRET);
-    const secure = url.protocol === 'https:' ? '; Secure' : '';
+    // SameSite=None (needed since the frontend is a different origin in
+    // production) requires Secure, which in turn requires https — so only use
+    // it once the Worker is actually served over https; local `wrangler dev`
+    // is plain http and falls back to SameSite=Lax (fine there since the Vite
+    // proxy keeps the browser on a single same-site origin).
+    const attrs = url.protocol === 'https:' ? 'SameSite=None; Secure' : 'SameSite=Lax';
     return json(
       { ok: true },
-      { headers: { 'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; SameSite=Lax${secure}` } },
+      { headers: { 'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; Path=/; ${attrs}` } },
     );
   }
 

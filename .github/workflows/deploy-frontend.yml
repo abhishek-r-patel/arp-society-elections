@@ -1,0 +1,54 @@
+name: Deploy Frontend to Cloudflare Pages
+
+# Manual only — no push/pull_request trigger, so no branch ever auto-deploys.
+# Trigger from the Actions tab (or `gh workflow run deploy-frontend.yml`).
+# The Cloudflare Pages project itself must be created as "Direct Upload" (not
+# connected via Cloudflare's Git integration) — see docs/CLOUDFLARE_DEPLOY.md —
+# otherwise Cloudflare would additionally auto-build on every push on its own.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build site
+        working-directory: frontend
+        run: npm run build
+        env:
+          # The deployed Worker's origin — set once as a repo Actions variable
+          # (Settings > Secrets and variables > Actions > Variables) after the
+          # first `deploy-worker.yml` run reveals its *.workers.dev URL.
+          VITE_API_BASE_URL: ${{ vars.WORKER_URL }}
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: frontend
+          command: pages deploy dist --project-name arp-society-elections --branch main

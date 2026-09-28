@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
+  API_BASE,
   adminLogout,
   adminRegisterVoter,
   clearDeclines,
@@ -356,7 +357,7 @@ function ClosedElectionPanel({
           )}
         </div>
       )}
-      <a href="/api/admin/export">Download audit CSV</a>
+      <a href={`${API_BASE}/api/admin/export`}>Download audit CSV</a>
       <p>
         To run another election, <Link to="/admin/setup-election">set up a new one</Link> — this record is retained
         for audit.

@@ -14,10 +14,17 @@ Do the steps below once. After that, deploying a change is just: push to
 
 ## 1. Create a Cloudflare API token
 
-Dashboard → **My Profile → API Tokens → Create Token → Custom token**, with:
+Dashboard → **My Profile → API Tokens → Create Token → Custom token**. In the
+permissions table, each row has an **Account / Zone / User** scope dropdown —
+set it to **Account** for all three rows below (Pages/Workers/D1 are
+account-wide resources, not tied to a specific domain):
 - **Account – Cloudflare Pages – Edit**
 - **Account – Workers Scripts – Edit**
 - **Account – D1 – Edit**
+
+This is a normal user-owned token (not the separate "account-owned tokens"
+feature under Manage Account, which is only needed for multi-user teams) —
+fine for a solo project like this one.
 
 Copy the token (shown once) and your **Account ID** (Dashboard home page, right
 sidebar).

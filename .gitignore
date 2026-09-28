@@ -7,3 +7,5 @@ dist/
 vite.config.js
 vite.config.d.ts
 .DS_Store
+# Locally-exported corporate proxy root CA, needed for Node/wrangler on this machine only.
+*.pem

@@ -19,9 +19,7 @@ GAS_URL = ""
 # Replace with your deployed Pages URL (see docs/CLOUDFLARE_DEPLOY.md).
 ALLOWED_ORIGIN = "https://arp-society-elections.pages.dev"
 
-# Replace database_id with the output of `wrangler d1 create election-db`
-# (run once, against your real Cloudflare account).
 [[d1_databases]]
 binding = "DB"
 database_name = "election-db"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "9cf9032c-7cab-4ca8-98e3-29f5d5ea0e10"

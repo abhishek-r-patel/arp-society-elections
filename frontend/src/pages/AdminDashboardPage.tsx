@@ -23,7 +23,9 @@ import {
   setElectionStatus,
 } from '../api';
 import Countdown from '../components/Countdown';
+import InfoTooltip from '../components/InfoTooltip';
 import { FLAT_CSV_TEMPLATE } from '../constants';
+import { FLAT_NO_HINT, PHONE_HINT, isValidEmail, isValidFlatNo, isValidPhone } from '../validation';
 import type { DeclaredResults, Election, FlatStatus, PositionResult, Turnout } from '../types';
 
 export default function AdminDashboardPage() {
@@ -165,24 +167,27 @@ function DraftOrScheduledPanel({
         </div>
       )}
 
-      <form onSubmit={handleSchedule}>
-        <label htmlFor="opens-at">Voting opens at</label>
-        <input
-          id="opens-at"
-          type="datetime-local"
-          value={opensAtLocal}
-          onChange={(e) => setOpensAtLocal(e.target.value)}
-        />
-        <label htmlFor="closes-at">Voting closes at (optional)</label>
-        <input
-          id="closes-at"
-          type="datetime-local"
-          value={closesAtLocal}
-          onChange={(e) => setClosesAtLocal(e.target.value)}
-        />
-        <button type="submit" disabled={!hasRegistrations}>
-          {election.status === 'scheduled' ? 'Update schedule' : 'Schedule voting'}
-        </button>
+      <form id="schedule-form" onSubmit={handleSchedule}>
+        <div className="field-row">
+          <div className="field-group">
+            <label htmlFor="opens-at">Voting opens at</label>
+            <input
+              id="opens-at"
+              type="datetime-local"
+              value={opensAtLocal}
+              onChange={(e) => setOpensAtLocal(e.target.value)}
+            />
+          </div>
+          <div className="field-group">
+            <label htmlFor="closes-at">Voting closes at (optional)</label>
+            <input
+              id="closes-at"
+              type="datetime-local"
+              value={closesAtLocal}
+              onChange={(e) => setClosesAtLocal(e.target.value)}
+            />
+          </div>
+        </div>
       </form>
 
       {error && (
@@ -191,10 +196,15 @@ function DraftOrScheduledPanel({
         </p>
       )}
 
-      <button onClick={handleOpenNow} disabled={!hasRegistrations}>
-        Open voting now
-      </button>
-      <CancelElectionButton onChanged={onChanged} />
+      <div className="button-row">
+        <button type="submit" form="schedule-form" disabled={!hasRegistrations}>
+          {election.status === 'scheduled' ? 'Update schedule' : 'Schedule voting'}
+        </button>
+        <button className="success" onClick={handleOpenNow} disabled={!hasRegistrations}>
+          Open voting now
+        </button>
+        <CancelElectionButton onChanged={onChanged} />
+      </div>
     </section>
   );
 }
@@ -237,14 +247,18 @@ function OpenElectionPanel({
         Turnout: {turnout?.votedCount ?? 0} voted, out of {turnout?.registeredCount ?? 0} registered
         ({turnout?.totalFlats ?? 0} eligible flats)
       </p>
-      <button onClick={onChanged}>Refresh turnout</button>
       {error && (
         <p role="alert" className="error">
           {error}
         </p>
       )}
-      <button onClick={handleClose}>Close voting</button>
-      <CancelElectionButton onChanged={onChanged} />
+      <div className="button-row">
+        <button onClick={onChanged}>Refresh turnout</button>
+        <button className="success" onClick={handleClose}>
+          Close voting
+        </button>
+        <CancelElectionButton onChanged={onChanged} />
+      </div>
 
       <RegistrationsPanel onChanged={onChanged} />
     </section>
@@ -312,7 +326,9 @@ function ClosedElectionPanel({
         </p>
       )}
       {election.status === 'cancelled' && <p>This election was cancelled. No results are published.</p>}
-      {declared && <WinnerResolutionPanel declared={declared} onChanged={refreshDeclared} />}
+      {declared && (declared.conflicts.length > 0 || declared.declinedCandidacies.length > 0) && (
+        <WinnerResolutionPanel declared={declared} onChanged={refreshDeclared} />
+      )}
       {results?.map((position) => (
         <div key={position.positionId} className="position-results">
           <h3>
@@ -408,9 +424,6 @@ function WinnerResolutionPanel({ declared, onChanged }: { declared: DeclaredResu
           {error}
         </p>
       )}
-      {declared.conflicts.length === 0 && declared.declinedCandidacies.length === 0 && (
-        <p className="hint">No one is currently the top vote-getter in more than one position.</p>
-      )}
       {declared.conflicts.map((conflict) => (
         <div key={conflict.name} className="conflict-card">
           <p>
@@ -503,6 +516,18 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
 
   async function handleAssistSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isValidFlatNo(assistFlatNo)) {
+      setAssistError(`Enter a valid flat number. ${FLAT_NO_HINT}.`);
+      return;
+    }
+    if (!isValidPhone(assistPhone)) {
+      setAssistError(`Enter a valid phone number. ${PHONE_HINT}.`);
+      return;
+    }
+    if (!isValidEmail(assistEmail)) {
+      setAssistError('Enter a valid email address.');
+      return;
+    }
     setAssistError(null);
     setAssistCode(null);
     setAssistLoading(true);
@@ -556,12 +581,14 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
       )}
 
       {flats && flats.length > 0 && (
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
               <th>Flat</th>
               <th>Voter</th>
               <th>Phone</th>
+              <th>Email</th>
               <th>Registered</th>
               <th>Voted</th>
               <th></th>
@@ -573,17 +600,19 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
                 <td>{f.flatNo}</td>
                 <td>{f.registration ? f.registration.voterName : <span className="hint">Not yet registered</span>}</td>
                 <td>{f.registration?.voterPhone ?? ''}</td>
+                <td>{f.registration?.voterEmail ?? ''}</td>
                 <td>{f.registration ? new Date(f.registration.registeredAt).toLocaleString() : ''}</td>
                 <td>{f.registration ? (f.registration.hasVoted ? 'Yes' : 'No') : ''}</td>
                 <td>
                   {f.registration && (
                     <button
-                      className="danger"
+                      className="danger icon-button"
                       disabled={f.registration.hasVoted}
                       title={f.registration.hasVoted ? 'Cannot revoke — already voted' : 'Revoke this registration'}
+                      aria-label="Revoke this registration"
                       onClick={() => handleRevoke(f.registration!.id)}
                     >
-                      Revoke
+                      🗑
                     </button>
                   )}
                 </td>
@@ -591,17 +620,26 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
 
       <h4>Register someone on their behalf</h4>
       <form onSubmit={handleAssistSubmit}>
-        <label htmlFor="assist-flat">Flat number</label>
-        <input id="assist-flat" value={assistFlatNo} onChange={(e) => setAssistFlatNo(e.target.value)} required />
-        <label htmlFor="assist-name">Name</label>
+        <label htmlFor="assist-flat">
+          Flat number<span className="required-mark">*</span> <InfoTooltip text={`${FLAT_NO_HINT}.`} />
+        </label>
+        <input id="assist-flat" value={assistFlatNo} onChange={(e) => setAssistFlatNo(e.target.value)} placeholder="e.g. C-201" required />
+        <label htmlFor="assist-name">
+          Name<span className="required-mark">*</span>
+        </label>
         <input id="assist-name" value={assistName} onChange={(e) => setAssistName(e.target.value)} required />
-        <label htmlFor="assist-phone">Phone</label>
-        <input id="assist-phone" value={assistPhone} onChange={(e) => setAssistPhone(e.target.value)} required />
-        <label htmlFor="assist-email">Email</label>
+        <label htmlFor="assist-phone">
+          Phone<span className="required-mark">*</span> <InfoTooltip text={`${PHONE_HINT}.`} />
+        </label>
+        <input id="assist-phone" value={assistPhone} onChange={(e) => setAssistPhone(e.target.value)} placeholder="9876543210" required />
+        <label htmlFor="assist-email">
+          Email<span className="required-mark">*</span>
+        </label>
         <input id="assist-email" type="email" value={assistEmail} onChange={(e) => setAssistEmail(e.target.value)} required />
         {assistError && (
           <p role="alert" className="error">

@@ -1,7 +1,18 @@
 /* Maplewood theme: warm amber/caramel + walnut brown, parchment backgrounds. */
+
+/* Mobile-first: without this, padded/bordered elements (inputs, buttons,
+   panels, tables) can render wider than their stretched 100% container,
+   causing a few px of horizontal overflow that's barely visible on desktop
+   but forces a page-wide horizontal scrollbar on narrow phone screens. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   color-scheme: light;
-  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   --maple-bg: #f6ead9;
   --maple-panel: #fffaf2;
@@ -16,12 +27,14 @@
   --maple-accent: #c98a4b;
   --maple-danger: #9c3b2e;
   --maple-danger-hover: #7c2e24;
+  --maple-success: #4d7c3f;
+  --maple-success-hover: #3d6432;
   --maple-warning-bg: #f6e2b0;
   --maple-warning-border: #d9a441;
   --maple-conflict-bg: #fbe4d4;
   --maple-conflict-border: #e2a06b;
   --maple-shadow: rgba(59, 36, 21, 0.1);
-  --maple-heading-font: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  --maple-heading-font: 'Lora', Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
 }
 
 body {
@@ -41,6 +54,13 @@ body {
   max-width: 640px;
   margin: 0 auto;
   padding: 2rem 1.25rem 4rem;
+}
+
+/* Wider than voter-facing pages (deliberately narrow/readable) — the admin
+   dashboard's data tables need the extra room, scaling with viewport width
+   instead of a fixed pixel value so it still centers nicely on any screen. */
+.admin-page {
+  max-width: min(1100px, 95vw);
 }
 
 h1,
@@ -130,6 +150,19 @@ button.danger:disabled {
   color: #f6ead9;
 }
 
+button.success {
+  background: var(--maple-success);
+}
+
+button.success:hover:not(:disabled) {
+  background: var(--maple-success-hover);
+}
+
+button.success:disabled {
+  background: #c9b8a4;
+  color: #f6ead9;
+}
+
 fieldset {
   border: none;
   padding: 0;
@@ -168,6 +201,60 @@ fieldset {
   color: var(--maple-text-muted);
 }
 
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--maple-border);
+  color: var(--maple-text-muted);
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 700;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.required-mark {
+  color: var(--maple-danger);
+  margin-left: 0.15rem;
+}
+
+.button-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.button-row button {
+  align-self: auto;
+}
+
+/* If a button in the row fails and shows an inline error, force it onto its
+   own full-width line instead of squeezing it in as another flex item. */
+.button-row .error {
+  flex-basis: 100%;
+  text-align: center;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.field-row .field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1 1 200px;
+}
+
 .panel {
   background: var(--maple-panel);
   border: 1px solid var(--maple-border-soft);
@@ -181,6 +268,8 @@ fieldset {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .backend-badge {
@@ -217,6 +306,13 @@ table {
   margin: 0.75rem 0;
 }
 
+/* Prevents wide tables (long emails/timestamps) from overflowing their panel
+   on narrow layouts — scrolls horizontally within the panel instead. */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
 th,
 td {
   text-align: left;
@@ -229,6 +325,14 @@ th {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+/* Action column (e.g. the revoke icon button) shrinks to fit its content
+   instead of stretching, so the button stays inside the table's border. */
+th:last-child,
+td:last-child {
+  width: 1%;
+  white-space: nowrap;
 }
 
 .admin-link {
@@ -271,10 +375,10 @@ th {
   font-size: 1rem;
   line-height: 1;
   min-width: 2.2rem;
+  min-height: 2.2rem;
 }
 
 .candidate-row .icon-button {
-  box-sizing: border-box;
   height: 2.5rem;
   flex-shrink: 0;
 }

@@ -6,6 +6,8 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { registerVoter, verifyVoterCode } from '../api';
+import InfoTooltip from '../components/InfoTooltip';
+import { FLAT_NO_HINT, PHONE_HINT, isValidEmail, isValidFlatNo, isValidPhone } from '../validation';
 
 export default function RegisterPage() {
   const [flatNo, setFlatNo] = useState('');
@@ -20,6 +22,18 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!isValidFlatNo(flatNo)) {
+      setError(`Enter a valid flat number. ${FLAT_NO_HINT}.`);
+      return;
+    }
+    if (!isValidPhone(voterPhone)) {
+      setError(`Enter a valid phone number. ${PHONE_HINT}.`);
+      return;
+    }
+    if (!isValidEmail(voterEmail)) {
+      setError('Enter a valid email address.');
+      return;
+    }
     setError(null);
     setLoading(true);
     try {
@@ -83,10 +97,14 @@ export default function RegisterPage() {
         notice board or the society group). The first household member to register becomes this flat's voter.
       </p>
       <form onSubmit={handleSubmit}>
-        <label htmlFor="flat-no">Flat number</label>
-        <input id="flat-no" value={flatNo} onChange={(e) => setFlatNo(e.target.value)} required />
+        <label htmlFor="flat-no">
+          Flat number<span className="required-mark">*</span> <InfoTooltip text={`${FLAT_NO_HINT}.`} />
+        </label>
+        <input id="flat-no" value={flatNo} onChange={(e) => setFlatNo(e.target.value)} placeholder="e.g. C-201" required />
 
-        <label htmlFor="registration-key">Registration key</label>
+        <label htmlFor="registration-key">
+          Registration key<span className="required-mark">*</span>
+        </label>
         <input
           id="registration-key"
           value={registrationKey}
@@ -94,13 +112,19 @@ export default function RegisterPage() {
           required
         />
 
-        <label htmlFor="voter-name">Your name</label>
+        <label htmlFor="voter-name">
+          Your name<span className="required-mark">*</span>
+        </label>
         <input id="voter-name" value={voterName} onChange={(e) => setVoterName(e.target.value)} required />
 
-        <label htmlFor="voter-phone">Phone number</label>
-        <input id="voter-phone" value={voterPhone} onChange={(e) => setVoterPhone(e.target.value)} required />
+        <label htmlFor="voter-phone">
+          Phone number<span className="required-mark">*</span> <InfoTooltip text={`${PHONE_HINT}.`} />
+        </label>
+        <input id="voter-phone" value={voterPhone} onChange={(e) => setVoterPhone(e.target.value)} placeholder="9876543210" required />
 
-        <label htmlFor="voter-email">Email</label>
+        <label htmlFor="voter-email">
+          Email<span className="required-mark">*</span>
+        </label>
         <input id="voter-email" type="email" value={voterEmail} onChange={(e) => setVoterEmail(e.target.value)} required />
 
         {error && (

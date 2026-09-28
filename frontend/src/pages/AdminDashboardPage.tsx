@@ -458,6 +458,7 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
   const [assistPhone, setAssistPhone] = useState('');
   const [assistEmail, setAssistEmail] = useState('');
   const [assistError, setAssistError] = useState<string | null>(null);
+  const [assistCode, setAssistCode] = useState<string | null>(null);
   const [assistLoading, setAssistLoading] = useState(false);
 
   const refreshFlats = useCallback(() => {
@@ -503,9 +504,11 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
   async function handleAssistSubmit(e: FormEvent) {
     e.preventDefault();
     setAssistError(null);
+    setAssistCode(null);
     setAssistLoading(true);
     try {
-      await adminRegisterVoter(assistFlatNo, assistName, assistPhone, assistEmail);
+      const result = await adminRegisterVoter(assistFlatNo, assistName, assistPhone, assistEmail);
+      setAssistCode(result.code ?? null);
       setAssistFlatNo('');
       setAssistName('');
       setAssistPhone('');
@@ -609,6 +612,14 @@ function RegistrationsPanel({ onChanged }: { onChanged: () => void }) {
           {assistLoading ? 'Registering…' : 'Register'}
         </button>
       </form>
+      {assistCode && (
+        <div className="credentials-output">
+          <p>Registered. Give this one-time voting code to the voter — it won't be shown again:</p>
+          <p>
+            <strong>{assistCode}</strong>
+          </p>
+        </div>
+      )}
     </div>
   );
 }

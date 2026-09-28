@@ -35,24 +35,24 @@ From `worker/`, logged in locally (`npx wrangler login`, or set
 ```powershell
 npx wrangler d1 create election-db
 ```
-Copy the `database_id` it prints into `worker/wrangler.toml`'s
-`[[env.production.d1_databases]]` block (replacing the placeholder
-`00000000-...`), then commit that change.
+Copy the `database_id` it prints into `worker/wrangler.production.toml`'s
+`[[d1_databases]]` block (replacing the placeholder `00000000-...`), then
+commit that change.
 
 ## 4. Set the Worker's production secrets
 
 These are set directly against Cloudflare (never via GitHub Actions or a
 committed file) — run once from `worker/`:
 ```powershell
-npx wrangler secret put ADMIN_PASSWORD_HASH --env production
-npx wrangler secret put ADMIN_SESSION_SECRET --env production
-npx wrangler secret put CREDENTIAL_PEPPER --env production
+npx wrangler secret put ADMIN_PASSWORD_HASH --config wrangler.production.toml
+npx wrangler secret put ADMIN_SESSION_SECRET --config wrangler.production.toml
+npx wrangler secret put CREDENTIAL_PEPPER --config wrangler.production.toml
 ```
 Use the same hash-generation approach as local dev for the password
 (`npm run set-admin-password -- "..."` prints the hash to paste in when
-prompted — it does not write to `.dev.vars` for `--env production`).
-`ADMIN_SESSION_SECRET` / `CREDENTIAL_PEPPER` should be different long random
-strings than your local `.dev.vars` values.
+prompted — it does not write to `.dev.vars` for this config). `ADMIN_SESSION_SECRET`
+/ `CREDENTIAL_PEPPER` should be different long random strings than your local
+`.dev.vars` values.
 
 ## 5. First Worker deploy
 
@@ -77,9 +77,9 @@ repository variable:
 
 ## 8. Point the Worker's CORS at the real Pages URL
 
-Edit `worker/wrangler.toml`'s `[env.production.vars]` → `ALLOWED_ORIGIN` to
-your actual Pages URL (`https://arp-society-elections.pages.dev`, adjusted if
-that name was taken), commit, then re-run **Deploy Worker to Cloudflare**.
+Edit `worker/wrangler.production.toml`'s `[vars]` → `ALLOWED_ORIGIN` to your
+actual Pages URL (`https://arp-society-elections.pages.dev`, adjusted if that
+name was taken), commit, then re-run **Deploy Worker to Cloudflare**.
 
 ## 9. First frontend deploy
 

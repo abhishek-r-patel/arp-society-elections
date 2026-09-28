@@ -43,7 +43,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
-          command: d1 execute election-db --remote --env production --file=schema.sql
+          command: d1 execute election-db --remote --config wrangler.production.toml --file=schema.sql
 
       - name: Deploy Worker
         uses: cloudflare/wrangler-action@v3
@@ -51,4 +51,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: worker
-          command: deploy --env production
+          command: deploy --config wrangler.production.toml

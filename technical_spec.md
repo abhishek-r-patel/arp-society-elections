@@ -67,7 +67,8 @@ arp-society-elections/
 │   ├── scripts/
 │   │   └── set-admin-password.mjs  # writes only a password HASH into .dev.vars
 │   ├── schema.sql            # D1 schema — single source of truth for the data model
-│   ├── wrangler.toml          # Worker config: local D1/vars + a separate [env.production] block
+│   ├── wrangler.toml          # Worker config for local `wrangler dev` only
+│   ├── wrangler.production.toml  # Separate production config, used by deploy-worker.yml (see §9)
 │   ├── .dev.vars / .dev.vars.example  # local secrets (gitignored) / template
 │   └── package.json
 ├── frontend/                 # React + Vite SPA
@@ -541,8 +542,8 @@ same-origin to the browser. This required:
   can't use `*`), `Access-Control-Allow-Credentials: true`, and `OPTIONS` preflight requests are
   answered directly in the entrypoint before routing.
 - `Env.ALLOWED_ORIGIN` (new field) — the Worker's source of truth for that origin, set via
-  `wrangler.toml`'s `[vars]` (local dev: `http://localhost:5173`) and `[env.production.vars]`
-  (the real Pages URL).
+  `wrangler.toml`'s `[vars]` (local dev: `http://localhost:5173`) and
+  `wrangler.production.toml`'s `[vars]` (the real Pages URL).
 - The admin session cookie (`worker/src/routes/admin.ts`) uses `SameSite=None; Secure` when
   served over https (production), vs `SameSite=Lax` for local `wrangler dev` (plain http, where
   `Secure` cookies can't be set at all).
@@ -554,10 +555,15 @@ same-origin to the browser. This required:
   fetch call (`AdminDashboardPage`'s audit CSV download link) also uses `API_BASE` for the same
   reason — a plain relative `href` would otherwise resolve against the Pages origin, not the
   Worker.
-- `worker/wrangler.toml` gained an `[env.production]` block (own `vars` and its own
-  `[[env.production.d1_databases]]` binding pointing at a real, separate D1 database created
-  once via `wrangler d1 create election-db` — the top-level `[[d1_databases]]` with its
-  placeholder ID is only ever used by local `wrangler dev`).
+- `worker/wrangler.production.toml` (new, separate file — **not** a `wrangler.toml`
+  `[env.production]` block) holds the production `name`/`main`/`vars`/`[[d1_databases]]`,
+  deployed via `wrangler deploy --config wrangler.production.toml`. A named-environment block was
+  tried first but reverted: the Wrangler version pinned here (3.114.17) has a bug where adding
+  one broke the default (no `--env`) `wrangler dev` config resolution too (it started reporting
+  "Missing entry-point to Worker script" on every hot-reload). A separate config file sidesteps
+  Wrangler's environments feature entirely. Its `database_id` is filled in once via
+  `wrangler d1 create election-db` against the real account — the top-level `wrangler.toml`'s
+  placeholder ID is only ever used by local `wrangler dev`.
 
 If a custom domain is added later and the Worker is routed at `yourdomain.com/api/*` alongside
 Pages on the same origin, none of the above needs to be reverted — `SameSite=None`/explicit CORS

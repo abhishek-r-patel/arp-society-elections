@@ -1,0 +1,27 @@
+# Production config, deployed via `wrangler deploy --config wrangler.production.toml`
+# (see .github/workflows/deploy-worker.yml) — ONLY ever triggered manually via that
+# workflow_dispatch-only GitHub Actions workflow. This Worker is NOT connected to
+# Cloudflare's own Git integration, so pushing to any branch does not deploy
+# anything by itself.
+#
+# Kept as a fully separate file rather than an `[env.production]` block in
+# wrangler.toml: the version of Wrangler pinned for this project (3.114.17) has a
+# bug where adding a named environment breaks the default (no --env) `wrangler dev`
+# config resolution too.
+name = "arp-society-elections-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+STORAGE_BACKEND = "D1"
+GAS_URL = ""
+# Replace with your deployed Pages URL (see docs/CLOUDFLARE_DEPLOY.md).
+ALLOWED_ORIGIN = "https://arp-society-elections.pages.dev"
+
+# Replace database_id with the output of `wrangler d1 create election-db`
+# (run once, against your real Cloudflare account).
+[[d1_databases]]
+binding = "DB"
+database_name = "election-db"
+database_id = "00000000-0000-0000-0000-000000000000"
